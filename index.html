@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Moment AI — AI Clip Studio</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090b18;color:#f5f5ff;font:16px/1.5 system-ui,sans-serif;background-image:radial-gradient(ellipse at 50% -15%,#38215f,transparent 55%)}
+main{width:min(780px,94%);margin:28px auto 60px}.hero{text-align:center;margin-bottom:22px}.hero h1{font-size:clamp(36px,8vw,52px);margin:0}.hero span{color:#a58aff}.muted,small{color:#aeb4d0}.card{background:#151a30;border:1px solid #303653;border-radius:20px;padding:20px;margin:14px 0}
+label{display:block;font-weight:650;margin:12px 0 7px}input,select{width:100%;padding:13px;border-radius:11px;border:1px solid #3a4264;background:#0c1122;color:white;font:inherit}
+button{border:0;border-radius:12px;padding:14px 16px;background:linear-gradient(90deg,#805cff,#428fff);color:white;font-weight:750;font-size:15px;cursor:pointer}.full{width:100%;margin-top:15px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}.tile{padding:12px;border:1px solid #303653;background:#0e1428;border-radius:13px}.tile b{display:block}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.notice{display:none;padding:13px;border-radius:12px;background:#24203d;border:1px solid #6751a3;margin-top:14px}.notice.show{display:block}.fine{font-size:12px;color:#aeb4d0}
+progress{width:100%;height:12px;accent-color:#9b7bff}.result{padding:12px;margin-top:10px;border:1px solid #303653;border-radius:12px;background:#0e1428}.result a{color:#bbaaff}
+@media(max-width:540px){.row{grid-template-columns:1fr}.card{padding:16px}}
+</style></head><body><main>
+<header class="hero"><div style="font-size:38px">🌌</div><h1>Moment <span>AI</span></h1><div class="muted">Upload a video → AI finds moments → Short clips</div></header>
+<section class="card">
+<h2>Make AI Shorts</h2>
+<label for="video">Upload a video file</label><input id="video" type="file" accept="video/*">
+<p class="fine">पहले चरण में अपने या अनुमति वाले वीडियो की फाइल अपलोड करें। YouTube लिंक से सीधे डाउनलोड अभी शामिल नहीं है।</p>
+<div class="grid">
+<div class="tile">😲 <b>Reaction</b><small>Strong reactions</small></div><div class="tile">🔥 <b>Epic</b><small>Exciting highlights</small></div>
+<div class="tile">💡 <b>Ideas</b><small>Useful moments</small></div><div class="tile">😂 <b>Funny</b><small>Humorous moments</small></div>
+</div>
+<div class="row">
+<div><label for="quality">Export quality</label><select id="quality"><option>360p</option><option>400p</option><option>480p</option><option selected>720p</option><option>1080p</option></select></div>
+<div><label for="count">Number of clips</label><select id="count"><option>3</option><option selected>5</option><option>10</option></select></div>
+</div>
+<button class="full" id="go">Find Best Moments</button>
+<div id="status" class="notice" aria-live="polite"></div>
+<div id="results"></div>
+</section>
+<section class="card"><b>Processing status</b><p class="muted">AI transcription + moment selection + vertical MP4 rendering. Server setup and API credentials are required before this works online.</p></section>
+</main>
+<script>
+const statusBox=document.querySelector('#status'), results=document.querySelector('#results'), button=document.querySelector('#go');
+button.onclick=async()=>{
+ const file=document.querySelector('#video').files[0];
+ results.innerHTML=''; statusBox.classList.add('show');
+ if(!file){statusBox.textContent='Pehle video file select karein.';return;}
+ const data=new FormData();data.append('video',file);data.append('quality',document.querySelector('#quality').value);data.append('count',document.querySelector('#count').value);
+ button.disabled=true;button.textContent='Uploading…';statusBox.textContent='Video upload ho raha hai…';
+ try{
+  const r=await fetch('/api/jobs',{method:'POST',body:data});const j=await r.json();
+  if(!r.ok)throw new Error(j.detail||'Upload failed');
+  statusBox.textContent=j.message||'Job created.';
+  if(j.clips&&j.clips.length){results.innerHTML=j.clips.map(c=>`<div class="result"><b>${c.category} · ${c.start}s–${c.end}s</b><br><a href="${c.url}" download>Download MP4 clip</a></div>`).join('');}
+ }catch(e){statusBox.textContent='Server error: '+e.message+'. Backend ko configured server par run karna hoga.';}
+ finally{button.disabled=false;button.textContent='Find Best Moments';}
+};
+</script></body></html>
